@@ -19,10 +19,10 @@ for (t in 1:(timesteps - 1)) {
   
   # Calculate the number of new turbines to be added
   n_new <- ceiling(n_existing * turb_neu_perc)
-  if (n_new >= turb_neu_max){
+  if (n_new >= turb_neu_max) {
     n_new <- turb_neu_max
-    return(n_new)
   }
+  # }
   
   # Add new turbines based on neighborhood
   for (i in 1:n_new) {
@@ -31,7 +31,7 @@ for (t in 1:(timesteps - 1)) {
     x <- chosen_turb[1]
     y <- chosen_turb[2]
     
-    # Find potential neighbors
+    # Find potential neighbors # similar for buffer for red kit
     potential_neighbors <- expand.grid(
       x + c(-1, 0, 1),
       y + c(-1, 0, 1)
