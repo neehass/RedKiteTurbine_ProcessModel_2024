@@ -13,6 +13,8 @@ for population growth.
 The goal is to explore the interaction between wind turbine development and the
 habitat of red kites.
 
+**Authors: Neele H. and Lukas L.**
+**Date:December 2024**
 
 ### Project Structure:
 
@@ -49,4 +51,15 @@ This project requires R and the following libraries:
 - Visualize the Results:
     - The simulation will display a series of plots showing the grid, turbine 
       placements (red), and red kites (green) at each timestep.
-        
+      
+
+### Future Improvements
+
+- Implement the Baden-Württemberg .shp file as geographical boundaries.
+- Implement a buffer zone around wind turbines to better simulate red kite 
+  avoidance behavior.
+- Add additional ecological constraints for red kite population dynamics.
+- Explore the impact of increased turbine density on red kite mortality rates.
+
+
+
