@@ -14,7 +14,8 @@ The goal is to explore the interaction between wind turbine development and the
 habitat of red kites.
 
 **Authors: Neele H. and Lukas L.**
-**Date:December 2024**
+
+**Date: December 2024**
 
 ### Project Structure:
 
