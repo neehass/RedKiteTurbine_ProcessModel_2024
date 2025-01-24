@@ -56,7 +56,7 @@ This project requires R and the following libraries:
 
 ### Future Improvements
 
-- Implement the Baden-Württemberg .shp file as geographical boundaries.
+- Implement the Baden-Württemberg.shp file as geographical boundaries.
 - Implement a buffer zone around wind turbines to better simulate red kite 
   avoidance behavior.
 - Add additional ecological constraints for red kite population dynamics.

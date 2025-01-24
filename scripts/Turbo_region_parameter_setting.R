@@ -31,7 +31,7 @@ y_dim <- 100         # Grid height (y-axis)
 region <- array(0, dim = c(x_dim, y_dim, timesteps))
 
 # Add Obstacles to the Region
-n_hinder_1 <- 20                          # Number of obstacles (e.g. buildings)
+n_hinder_1 <- 100                          # Number of obstacles (e.g. buildings)
 random_x <- sample(1:x_dim, n_hinder_1, replace = TRUE)  # Random x-coordinates
 random_y <- sample(1:y_dim, n_hinder_1, replace = TRUE)  # Random y-coordinates
 
@@ -39,6 +39,25 @@ random_y <- sample(1:y_dim, n_hinder_1, replace = TRUE)  # Random y-coordinates
 for (i in 1:n_hinder_1) {
   region[random_x[i], random_y[i], ] <- 1
 }
+
+# Initialize an additional layer for building buffers
+building_buffer <- array(FALSE, dim = c(x_dim, y_dim, timesteps))
+
+# Mark obstacles and their buffers for all timesteps
+for (i in 1:n_hinder_1) {
+  region[random_x[i], random_y[i], ] <- 1
+  # Define buffer around each building
+  for (dx in -1:1) {
+    for (dy in -1:1) {
+      bx <- random_x[i] + dx
+      by <- random_y[i] + dy
+      if (bx >= 1 && bx <= x_dim && by >= 1 && by <= y_dim) {
+        building_buffer[bx, by, ] <- TRUE
+      }
+    }
+  }
+}
+
 
 # ----------------------------------------------------------------
 # Wind Turbine Parameters ------------------------------------------------------

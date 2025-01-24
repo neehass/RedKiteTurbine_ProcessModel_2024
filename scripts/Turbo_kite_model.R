@@ -34,44 +34,50 @@ for (t in 1:(timesteps - 1)) {
   
   # Calculate number of new turbines to add
   n_new <- ceiling(n_existing * turb_neu_perc)
-  if (n_new >= turb_neu_max) n_new <- turb_neu_max
+  if (n_new > turb_neu_max) n_new <- turb_neu_max
   
-  # Place turbines near existing ones
-  for (i in 1:n_new) {
-    # Randomly select an existing turbine as a neighbor
-    chosen_turb <- existing_turbs[sample(1:n_existing, 1), ]
-    x <- chosen_turb[1]
-    y <- chosen_turb[2]
-    
-    # Find valid neighboring cells
-    potential_neighbors <- expand.grid(
-      x + c(-1, 0, 1),
-      y + c(-1, 0, 1)
-    )
-    colnames(potential_neighbors) <- c("x", "y")
-    
-    # Filter valid neighbors
-    valid_neighbors <- potential_neighbors %>% 
-      filter(x >= 1 & x <= x_dim, y >= 1 & y <= y_dim) %>% 
-      filter(!apply(., 1, function(coord) {
-        turbine[coord[1], coord[2], t] | region[coord[1], coord[2], t]
-      }))
-    
-    # Skip if no valid neighbors are found
-    if (nrow(valid_neighbors) == 0) next
-    
-    # Randomly select a valid neighbor
-    new_turb <- valid_neighbors[sample(1:nrow(valid_neighbors), 1), ]
-    turbine[new_turb$x, new_turb$y, t + 1] <- TRUE
+  # Place turbines near existing ones and mark buffers
+  if (n_existing > 0) {
+    for (i in 1:n_new) {
+      chosen_turb <- existing_turbs[sample(1:n_existing, 1), ]
+      x <- chosen_turb[1]
+      y <- chosen_turb[2]
+      
+      # Find valid neighboring cells
+      potential_neighbors <- expand.grid(
+        x + c(-1, 0, 1),
+        y + c(-1, 0, 1)
+      )
+      colnames(potential_neighbors) <- c("x", "y")
+      
+      # Filter valid neighbors
+      valid_neighbors <- potential_neighbors %>%
+        filter(x >= 1 & x <= x_dim, y >= 1 & y <= y_dim) %>%
+        filter(!apply(., 1, function(coord) {
+          turbine[coord[1], coord[2], t] | region[coord[1], coord[2], t] | buffer[coord[1], coord[2], t]
+        }))
+      
+      # Place the turbine and mark buffers if valid neighbors exist
+      if (nrow(valid_neighbors) > 0) {
+        new_turb <- valid_neighbors[sample(1:nrow(valid_neighbors), 1), ]
+        turbine[new_turb$x, new_turb$y, t + 1] <- TRUE
+        
+        # Mark buffer zones around the new turbine
+        neighbors_to_buffer <- expand.grid(x = new_turb$x + c(-1, 0, 1), y = new_turb$y + c(-1, 0, 1))
+        neighbors_to_buffer <- neighbors_to_buffer[neighbors_to_buffer$x >= 1 & neighbors_to_buffer$x <= x_dim & neighbors_to_buffer$y >= 1 & neighbors_to_buffer$y <= y_dim,]
+        for (j in 1:nrow(neighbors_to_buffer)) {
+          buffer[neighbors_to_buffer$x[j], neighbors_to_buffer$y[j], t + 1] <- TRUE
+        }
+      }
+    }
   }
   
-  # Random turbine placement
-  if (n_new != 1) {
-    random_coords <- which(!region[, , t] & !turbine[, , t], arr.ind = TRUE)
+  # Random turbine placement if new turbines are less than limit
+  if (n_new < turb_neu_max) {
+    random_coords <- which(!region[, , t] & !turbine[, , t] & !buffer[, , t], arr.ind = TRUE)
     if (nrow(random_coords) > 0) {
-      n_random_turbs <- sample(n_new:(turb_neu_max - n_new), 1)
+      n_random_turbs <- turb_neu_max - n_new
       selected_random_coords <- random_coords[sample(1:nrow(random_coords), min(n_random_turbs, nrow(random_coords))), ]
-      selected_random_coords <- matrix(selected_random_coords, ncol = 2)
       for (i in 1:nrow(selected_random_coords)) {
         turbine[selected_random_coords[i, 1], selected_random_coords[i, 2], t + 1] <- TRUE
       }
@@ -92,7 +98,7 @@ for (t in 1:(timesteps - 1)) {
   N_next <- round(N_t * exp(growth_rate * (1 - N_t / carrying_capacity)))
   
   # Determine valid cells for kite placement
-  random_coords <- which(!region[, , t] & !turbine[, , t], arr.ind = TRUE)
+  random_coords <- which(!region[, , t] & !turbine[, , t] & !buffer[, , t], arr.ind = TRUE)
   
   # Only proceed if valid cells exist
   if (nrow(random_coords) > 0) {
@@ -114,10 +120,9 @@ for (t in 1:(timesteps - 1)) {
   kites[, , t + 1] <- kites[, , t + 1] | kites[, , t]
   
   # Track population counts
-  n_turb[t + 1] <- nrow(which(turbine[, , t + 1], arr.ind = TRUE))
+  n_turb[t + 1] <- sum(turbine[, , t + 1])
   n_kites[t + 1] <- sum(kites[, , t + 1])
 }
-
 # ----------------------------------------------------------------
 # Visualization of Results -----------------------------------------------------
 # ----------------------------------------------------------------
@@ -132,13 +137,14 @@ for (t in 1:timesteps) {
     kite = as.vector(kites[, , t])
   )
   
-  # Create the plot
+  # Create the plot with buffer zone
   p <- ggplot(df, aes(x = x, y = y)) +
     geom_tile(aes(fill = region), show.legend = FALSE) +
     scale_fill_gradient(low = "white", high = "blue", name = "Region") +
     geom_point(data = subset(df, turbine == TRUE), aes(x = x, y = y), color = "red", size = 2) +
     geom_point(data = subset(df, kite == TRUE), aes(x = x, y = y), color = "green", size = 2) +
-    labs(title = paste("Red Kites in Simulation, Timestep = ", t), x = "X", y = "Y") +
+    geom_point(data = subset(df, buffer == TRUE), aes(x = x, y = y), color = "yellow", size = 1, shape = 15) +
+    labs(title = paste("Simulation at Timestep = ", t), x = "X", y = "Y") +
     theme_minimal()
   
   # Print the plot
